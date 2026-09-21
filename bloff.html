@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>بازی شرط‌بندی رنگی</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #1a1a2e;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      direction: rtl;
+      color: #fff;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: #2c3e50;
+      border-radius: 20px;
+      padding: 25px 20px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      transition: background 0.5s;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+    .view {
+      display: none;
+      padding: 20px;
+      border-radius: 15px;
+      transition: background 0.5s;
+    }
+    .view.active {
+      display: block;
+    }
+    .btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 40px;
+      transition: 0.2s;
+      margin: 5px;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+    .btn:active {
+      background: #fff;
+      color: #000;
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .btn.large {
+      font-size: 1.5rem;
+      padding: 15px 35px;
+    }
+    input[type="text"], input[type="number"] {
+      background: rgba(255,255,255,0.15);
+      border: 2px solid #fff;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      text-align: center;
+      outline: none;
+      width: 100%;
+      max-width: 250px;
+      margin: 5px;
+    }
+    input::placeholder {
+      color: #ccc;
+    }
+    .wheel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    canvas {
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: #34495e;
+    }
+    .team-box {
+      padding: 20px;
+      margin: 10px;
+      display: inline-block;
+      min-width: 140px;
+      text-align: center;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.2);
+      border: 2px solid #fff;
+    }
+    .team-red {
+      border-color: #e74c3c;
+      background: rgba(231, 76, 60, 0.2);
+    }
+    .team-blue {
+      border-color: #3498db;
+      background: rgba(52, 152, 219, 0.2);
+    }
+    .score-big {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .turn-indicator {
+      font-size: 1.3rem;
+      text-align: center;
+      margin-bottom: 15px;
+      padding: 8px 20px;
+      border-radius: 30px;
+      display: inline-block;
+      background: rgba(0,0,0,0.3);
+      border: 2px solid #fff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .cat-card {
+      border: 2px solid #fff;
+      border-radius: 20px;
+      padding: 15px;
+      text-align: center;
+      background: rgba(255,255,255,0.08);
+    }
+    .point-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .point-btn {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid #fff;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .point-btn.used {
+      text-decoration: line-through;
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .bidding-layout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      margin: 30px 0;
+    }
+    .bid-number {
+      font-size: 5rem;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      border: 3px solid #fff;
+      border-radius: 20px;
+      padding: 10px 30px;
+      min-width: 120px;
+      text-align: center;
+    }
+    .timer-large {
+      font-size: 6rem;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(0,0,0,0.5);
+      border: 3px solid #fff;
+      border-radius: 30px;
+      padding: 20px 40px;
+      text-align: center;
+      display: inline-block;
+    }
+    .timer-info {
+      font-size: 1.3rem;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .timer-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .result-text {
+      font-size: 1.3rem;
+      text-align: center;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="mainContainer">
+  <!-- Wheel View -->
+  <div id="wheelView" class="view active" style="background: #2c3e50;">
+    <h1>تقسیم تیم‌ها</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px;">
+      <input type="text" id="p1" placeholder="بازیکن ۱" maxlength="15">
+      <input type="text" id="p2" placeholder="بازیکن ۲" maxlength="15">
+      <input type="text" id="p3" placeholder="بازیکن ۳" maxlength="15">
+      <input type="text" id="p4" placeholder="بازیکن ۴" maxlength="15">
+    </div>
+    <div style="text-align: center; margin-bottom: 15px;">
+      <button class="btn" id="startWheelBtn">شروع چرخونه</button>
+    </div>
+    <div id="wheelArea" class="wheel-container" style="display: none;">
+      <canvas id="wheelCanvas" width="280" height="280"></canvas>
+      <button class="btn large" id="spinWheelBtn">بچرخون</button>
+      <p id="spinMessage" style="font-size:1.2rem;"></p>
+    </div>
+    <div id="teamsPreview" style="display: flex; justify-content: space-around; margin-top: 15px;"></div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button class="btn large" id="toGameBtn" style="display: none;">شروع بازی</button>
+    </div>
+  </div>
+
+  <!-- Game View -->
+  <div id="gameView" class="view" style="background: #2c3e50;">
+    <h1>انتخاب سوال</h1>
+    <div style="text-align: center;">
+      <div id="turnIndicator" class="turn-indicator"></div>
+    </div>
+    <div style="display: flex; justify-content: space-around; margin-bottom: 15px;" id="scoreBoard"></div>
+    <div class="grid" id="categoriesGrid"></div>
+  </div>
+
+  <!-- Bidding View -->
+  <div id="biddingView" class="view" style="background: #2c3e50;">
+    <h1>شرط‌بندی</h1>
+    <p style="text-align:center; font-size:1.2rem;" id="biddingQuestion"></p>
+    <p style="text-align:center;" id="biddingTeamIndicator"></p>
+    <div class="bidding-layout">
+      <button class="btn large" id="challengeBtn">چالش</button>
+      <div class="bid-number" id="bidDisplay">1</div>
+      <button class="btn large" id="raiseBidBtn">+۱</button>
+    </div>
+    <p style="text-align:center; font-size:1rem;" id="bidHistory"></p>
+  </div>
+
+  <!-- Timer View -->
+  <div id="timerView" class="view" style="background: #2c3e50;">
+    <h1 id="timerHeading">۶۰ ثانیه فرصت</h1>
+    <div id="timerQuestionDisplay" class="timer-info"></div>
+    <div id="timerTeamDisplay" class="timer-info"></div>
+    <div style="display: flex; justify-content: center; margin: 20px 0;">
+      <div class="timer-large" id="timerDisplay">۶۰</div>
+    </div>
+    <div class="timer-buttons" id="timerButtons" style="display: none;">
+      <button class="btn large" id="successBtn">توانستند</button>
+      <button class="btn large" id="failBtn">نتوانستند</button>
+    </div>
+    <p style="text-align:center; margin-top:15px;" id="requiredBidText"></p>
+  </div>
+
+  <!-- Result View -->
+  <div id="resultView" class="view" style="background: #2c3e50;">
+    <h1>نتیجه</h1>
+    <div id="resultContent" class="result-text"></div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button class="btn large" id="continueBtn">ادامه بازی</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- Game State -----
+    const state = {
+      players: [],
+      teams: [[], []],
+      teamNames: ['تیم قرمز', 'تیم آبی'],
+      teamColors: ['#e74c3c', '#3498db'],
+      scores: [0, 0],
+      currentPicker: 0,          // team that picks next (0=red, 1=blue)
+      lastRoundWinner: null,     // team that won last round (0 or 1)
+      categories: [
+        {
+          name: 'سینما و تلویزیون',
+          questions: [
+            { points: 20, text: 'بازیگران زن ایرانی' },
+            { points: 40, text: 'فیلم‌های برنده اسکار بهترین فیلم' },
+            { points: 60, text: 'کارگردانان بزرگ سینمای جهان' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'ورزش',
+          questions: [
+            { points: 20, text: 'ورزش‌های توپی' },
+            { points: 40, text: 'کشورهای میزبان المپیک تابستانی' },
+            { points: 60, text: 'ورزش‌های بدون توپ' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'تاریخ',
+          questions: [
+            { points: 20, text: 'پایتخت‌های امپراتوری‌های باستانی' },
+            { points: 40, text: 'شخصیت‌های مهم تاریخ معاصر' },
+            { points: 60, text: 'جنگ‌های بزرگ قرن بیستم' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'جغرافیا',
+          questions: [
+            { points: 20, text: 'کشورهای همسایه ایران' },
+            { points: 40, text: 'رودهای بزرگ جهان' },
+            { points: 60, text: 'کوه‌های بالای ۸۰۰۰ متر' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'موسیقی',
+          questions: [
+            { points: 20, text: 'خوانندگان مشهور ایرانی' },
+            { points: 40, text: 'سازهای موسیقی سنتی' },
+            { points: 60, text: 'آلبوم‌های پرفروش تاریخ' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'غذاهای جهان',
+          questions: [
+            { points: 20, text: 'غذاهای معروف ایتالیایی' },
+            { points: 40, text: 'دسرهای بین‌المللی' },
+            { points: 60, text: 'غذاهای خیابانی معروف دنیا' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'ادبیات',
+          questions: [
+            { points: 20, text: 'شاعران بزرگ فارسی' },
+            { points: 40, text: 'کتاب‌های کلاسیک جهان' },
+            { points: 60, text: 'نویسندگان برنده نوبل ادبیات' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'تکنولوژی',
+          questions: [
+            { points: 20, text: 'برندهای تلفن همراه' },
+            { points: 40, text: 'مخترعان تأثیرگذار تاریخ' },
+            { points: 60, text: 'شرکت‌های بزرگ فناوری (FAANG)' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'حیوانات',
+          questions: [
+            { points: 20, text: 'حیوانات اهلی' },
+            { points: 40, text: 'پرندگان شکاری' },
+            { points: 60, text: 'حیوانات منقرض شده' }
+          ],
+          played: [false, false, false]
+        },
+        {
+          name: 'برندها و محصولات',
+          questions: [
+            { points: 20, text: 'برندهای پوشاک ورزشی' },
+            { points: 40, text: 'شرکت‌های خودروسازی آسیایی' },
+            { points: 60, text: 'برندهای لوکس ساعت' }
+          ],
+          played: [false, false, false]
+        }
+      ],
+      currentCatIdx: null,
+      currentQIdx: null,
+      currentPoints: 0,
+      biddingTeam: null,
+      lastBidTeam: null,
+      currentBid: 1,
+      timerInterval: null,
+      timeLeft: 60,
+      answeringTeam: null,
+      challengingTeam: null,
+      wheelPlayers: [],
+      assignSlots: [0, 0, 1, 1],
+      currentSlot: 0,
+      wheelLocked: false
+    };
+
+    function toPersianNum(num) {
+      const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+      return String(num).split('').map(d => persianDigits[parseInt(d)]).join('');
+    }
+
+    const views = {
+      wheel: document.getElementById('wheelView'),
+      game: document.getElementById('gameView'),
+      bidding: document.getElementById('biddingView'),
+      timer: document.getElementById('timerView'),
+      result: document.getElementById('resultView')
+    };
+    const wheelCanvas = document.getElementById('wheelCanvas');
+    const ctx = wheelCanvas.getContext('2d');
+    const spinMessage = document.getElementById('spinMessage');
+    const teamsPreview = document.getElementById('teamsPreview');
+    const toGameBtn = document.getElementById('toGameBtn');
+    const scoreBoard = document.getElementById('scoreBoard');
+    const categoriesGrid = document.getElementById('categoriesGrid');
+    const turnIndicator = document.getElementById('turnIndicator');
+    const bidDisplay = document.getElementById('bidDisplay');
+    const biddingQuestion = document.getElementById('biddingQuestion');
+    const biddingTeamIndicator = document.getElementById('biddingTeamIndicator');
+    const bidHistory = document.getElementById('bidHistory');
+    const timerHeading = document.getElementById('timerHeading');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerQuestionDisplay = document.getElementById('timerQuestionDisplay');
+    const timerTeamDisplay = document.getElementById('timerTeamDisplay');
+    const requiredBidText = document.getElementById('requiredBidText');
+    const timerButtons = document.getElementById('timerButtons');
+    const resultContent = document.getElementById('resultContent');
+
+    function showView(viewId) {
+      Object.values(views).forEach(v => v.classList.remove('active'));
+      views[viewId].classList.add('active');
+      updateDynamicBackground(viewId);
+    }
+
+    function updateDynamicBackground(viewId) {
+      views.wheel.style.background = '#2c3e50';
+      views.game.style.background = '#2c3e50';
+      views.bidding.style.background = '#2c3e50';
+      views.timer.style.background = '#2c3e50';
+      views.result.style.background = '#2c3e50';
+
+      if (viewId === 'game') {
+        views.game.style.background = state.currentPicker === 0 ? '#c0392b' : '#2980b9';
+      } else if (viewId === 'bidding') {
+        views.bidding.style.background = state.biddingTeam === 0 ? '#c0392b' : '#2980b9';
+      } else if (viewId === 'timer') {
+        views.timer.style.background = state.answeringTeam === 0 ? '#c0392b' : '#2980b9';
+      } else if (viewId === 'result') {
+        const color = state.lastRoundWinner === 0 ? '#c0392b' : (state.lastRoundWinner === 1 ? '#2980b9' : '#2c3e50');
+        views.result.style.background = color;
+      }
+    }
+
+    function drawWheel(names) {
+      ctx.clearRect(0, 0, 280, 280);
+      const num = names.length;
+      if (num === 0) return;
+      const colors = ['#e74c3c', '#3498db', '#e74c3c', '#3498db'];
+      const arc = (2 * Math.PI) / num;
+      for (let i = 0; i < num; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.moveTo(140, 140);
+        ctx.arc(140, 140, 130, angle, angle + arc);
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.save();
+        ctx.translate(140, 140);
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = "center";
+        ctx.fillStyle = '#fff';
+        ctx.font = "bold 18px 'Segoe UI'";
+        ctx.fillText(names[i], 85, 7);
+        ctx.restore();
+      }
+      ctx.beginPath();
+      ctx.arc(140, 140, 20, 0, 2 * Math.PI);
+      ctx.fillStyle = '#2c3e50';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    document.getElementById('startWheelBtn').addEventListener('click', () => {
+      const p1 = document.getElementById('p1').value.trim();
+      const p2 = document.getElementById('p2').value.trim();
+      const p3 = document.getElementById('p3').value.trim();
+      const p4 = document.getElementById('p4').value.trim();
+      if (!p1 || !p2 || !p3 || !p4) {
+        alert('نام هر چهار بازیکن را وارد کنید.');
+        return;
+      }
+      state.players = [p1, p2, p3, p4];
+      state.wheelPlayers = [...state.players];
+      state.assignSlots = [0, 0, 1, 1];
+      state.currentSlot = 0;
+      state.teams = [[], []];
+      state.wheelLocked = false;
+      document.getElementById('wheelArea').style.display = 'flex';
+      drawWheel(state.wheelPlayers);
+      spinMessage.textContent = '';
+      updateTeamsPreview();
+      toGameBtn.style.display = 'none';
+    });
+
+    function updateTeamsPreview() {
+      teamsPreview.innerHTML = `
+        <div class="team-box team-red"><h3>تیم قرمز</h3><p>${state.teams[0].join('، ') || '---'}</p></div>
+        <div class="team-box team-blue"><h3>تیم آبی</h3><p>${state.teams[1].join('، ') || '---'}</p></div>
+      `;
+    }
+
+    document.getElementById('spinWheelBtn').addEventListener('click', () => {
+      if (state.wheelLocked || state.wheelPlayers.length === 0) return;
+      state.wheelLocked = true;
+      const spinBtn = document.getElementById('spinWheelBtn');
+      spinBtn.disabled = true;
+      const randomDegree = 2000 + Math.floor(Math.random() * 2000);
+      wheelCanvas.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+      wheelCanvas.style.transform = `rotate(${randomDegree}deg)`;
+
+      setTimeout(() => {
+        const randomIndex = Math.floor(Math.random() * state.wheelPlayers.length);
+        const selectedPlayer = state.wheelPlayers[randomIndex];
+        const targetTeam = state.assignSlots[state.currentSlot];
+        state.teams[targetTeam].push(selectedPlayer);
+        state.wheelPlayers.splice(randomIndex, 1);
+        state.currentSlot++;
+        wheelCanvas.style.transition = 'none';
+        wheelCanvas.style.transform = 'rotate(0deg)';
+        drawWheel(state.wheelPlayers);
+        spinMessage.textContent = `${selectedPlayer} به تیم ${targetTeam+1} اضافه شد.`;
+        updateTeamsPreview();
+        state.wheelLocked = false;
+        spinBtn.disabled = false;
+
+        if (state.currentSlot >= 4) {
+          toGameBtn.style.display = 'inline-block';
+          spinBtn.style.display = 'none';
+          spinMessage.textContent = 'چیدمان کامل شد.';
+        }
+      }, 4000);
+    });
+
+    toGameBtn.addEventListener('click', () => {
+      state.teamNames = [
+        state.teams[0].join(' و ') || 'تیم قرمز',
+        state.teams[1].join(' و ') || 'تیم آبی'
+      ];
+      state.scores = [0, 0];
+      state.currentPicker = Math.floor(Math.random() * 2); // random start
+      state.lastRoundWinner = null;
+      state.categories.forEach(cat => cat.played = [false, false, false]);
+      showView('game');
+      renderGameView();
+    });
+
+    function renderGameView() {
+      scoreBoard.innerHTML = `
+        <div class="team-box team-red"><h3>${state.teamNames[0]}</h3><div class="score-big">${state.scores[0]}</div></div>
+        <div class="team-box team-blue"><h3>${state.teamNames[1]}</h3><div class="score-big">${state.scores[1]}</div></div>
+      `;
+
+      // Turn indicator
+      const pickerColor = state.currentPicker === 0 ? '#e74c3c' : '#3498db';
+      const pickerName = state.teamNames[state.currentPicker];
+      turnIndicator.textContent = `نوبت انتخاب: ${pickerName}`;
+      turnIndicator.style.borderColor = pickerColor;
+      turnIndicator.style.color = pickerColor;
+
+      // Update game view background to match turn
+      updateDynamicBackground('game');
+
+      categoriesGrid.innerHTML = '';
+      state.categories.forEach((cat, cIdx) => {
+        const card = document.createElement('div');
+        card.className = 'cat-card';
+        card.innerHTML = `<h3>${cat.name}</h3><div class="point-row"></div>`;
+        const row = card.querySelector('.point-row');
+        cat.questions.forEach((q, qIdx) => {
+          const btn = document.createElement('button');
+          btn.className = `point-btn ${cat.played[qIdx] ? 'used' : ''}`;
+          btn.textContent = q.points;
+          btn.disabled = cat.played[qIdx];
+          btn.addEventListener('click', () => selectQuestion(cIdx, qIdx));
+          row.appendChild(btn);
+        });
+        categoriesGrid.appendChild(card);
+      });
+    }
+
+    function selectQuestion(catIdx, qIdx) {
+      if (state.categories[catIdx].played[qIdx]) return;
+      state.currentCatIdx = catIdx;
+      state.currentQIdx = qIdx;
+      const q = state.categories[catIdx].questions[qIdx];
+      state.currentPoints = q.points;
+      state.currentBid = 1;
+      state.lastBidTeam = state.currentPicker;   // picking team makes the first bid
+      state.biddingTeam = 1 - state.currentPicker; // other team's turn to act
+      showView('bidding');
+      renderBiddingUI();
+    }
+
+    function renderBiddingUI() {
+      const q = state.categories[state.currentCatIdx].questions[state.currentQIdx];
+      biddingQuestion.textContent = `سوال: ${q.text} (${state.currentPoints} امتیاز)`;
+      biddingTeamIndicator.textContent = `نوبت ${state.teamNames[state.biddingTeam]}`;
+      bidDisplay.textContent = state.currentBid;
+      bidHistory.textContent = `شرط فعلی: ${state.currentBid} توسط ${state.teamNames[state.lastBidTeam]}`;
+      // Update background to match current bidding team
+      updateDynamicBackground('bidding');
+    }
+
+    document.getElementById('raiseBidBtn').addEventListener('click', () => {
+      if (state.biddingTeam === state.lastBidTeam) return;
+      state.currentBid += 1;
+      state.lastBidTeam = state.biddingTeam;
+      state.biddingTeam = 1 - state.biddingTeam;
+      renderBiddingUI();
+    });
+
+    document.getElementById('challengeBtn').addEventListener('click', () => {
+      state.answeringTeam = state.lastBidTeam;
+      state.challengingTeam = state.biddingTeam;
+      startTimerPhase();
+    });
+
+    function getTimerDuration(points) {
+      if (points === 20) return 60;
+      if (points === 40) return 45;
+      if (points === 60) return 30;
+      return 60;
+    }
+
+    function startTimerPhase() {
+      const duration = getTimerDuration(state.currentPoints);
+      state.timeLeft = duration;
+      clearInterval(state.timerInterval);
+      showView('timer');
+      const q = state.categories[state.currentCatIdx].questions[state.currentQIdx];
+      timerHeading.textContent = `${toPersianNum(duration)} ثانیه فرصت`;
+      timerQuestionDisplay.textContent = `سوال: ${q.text}`;
+      timerTeamDisplay.textContent = `تیم پاسخ‌دهنده: ${state.teamNames[state.answeringTeam]}`;
+      requiredBidText.textContent = `باید ${state.currentBid} مورد گفته شود.`;
+      timerDisplay.textContent = toPersianNum(duration);
+      timerButtons.style.display = 'none';
+
+      state.timerInterval = setInterval(() => {
+        state.timeLeft--;
+        timerDisplay.textContent = toPersianNum(state.timeLeft);
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timerInterval);
+          timerButtons.style.display = 'flex';
+          timerDisplay.textContent = '۰';
+        }
+      }, 1000);
+    }
+
+    document.getElementById('successBtn').addEventListener('click', () => {
+      timerButtons.style.display = 'none';
+      handleTimerEnd(true);
+    });
+    document.getElementById('failBtn').addEventListener('click', () => {
+      timerButtons.style.display = 'none';
+      handleTimerEnd(false);
+    });
+
+    function handleTimerEnd(success) {
+      state.categories[state.currentCatIdx].played[state.currentQIdx] = true;
+      const points = state.currentPoints;
+      const answerer = state.answeringTeam;
+      const challenger = state.challengingTeam;
+      let message = '';
+      if (success) {
+        state.scores[answerer] += points;
+        state.lastRoundWinner = answerer;
+        message = `${state.teamNames[answerer]} توانست ${state.currentBid} مورد بگوید و ${points} امتیاز گرفت.`;
+      } else {
+        const half = Math.floor(points / 2);
+        state.scores[challenger] += half;
+        state.lastRoundWinner = challenger;
+        message = `${state.teamNames[answerer]} نتوانست. ${half} امتیاز به ${state.teamNames[challenger]} رسید.`;
+      }
+      // Winner picks next
+      state.currentPicker = state.lastRoundWinner;
+      let winnerMsg = '';
+      if (state.scores[0] >= 300) winnerMsg = `${state.teamNames[0]} برنده شد!`;
+      else if (state.scores[1] >= 300) winnerMsg = `${state.teamNames[1]} برنده شد!`;
+      resultContent.innerHTML = `<p>${message}</p><p style="font-size:1.5rem; margin-top:15px;">${winnerMsg}</p>`;
+      showView('result');
+    }
+
+    document.getElementById('continueBtn').addEventListener('click', () => {
+      if (state.scores[0] >= 300 || state.scores[1] >= 300) {
+        alert('بازی تمام شد! برای شروع دوباره صفحه را رفرش کنید.');
+        return;
+      }
+      const anyLeft = state.categories.some(cat => cat.played.includes(false));
+      if (!anyLeft) {
+        let finalMsg = '';
+        if (state.scores[0] > state.scores[1]) finalMsg = `${state.teamNames[0]} برنده نهایی است!`;
+        else if (state.scores[1] > state.scores[0]) finalMsg = `${state.teamNames[1]} برنده نهایی است!`;
+        else finalMsg = 'مساوی!';
+        resultContent.innerHTML += `<p style="font-size:1.5rem;">${finalMsg}</p>`;
+        document.getElementById('continueBtn').disabled = true;
+        return;
+      }
+      showView('game');
+      renderGameView();
+    });
+
+    drawWheel([]);
+  })();
+</script>
+</body>
+</html>
